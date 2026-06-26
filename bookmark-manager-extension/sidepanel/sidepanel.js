@@ -99,13 +99,13 @@ function makeBookmarkHTML(bm) {
   `;
 }
 
-function makeFolderHTML(folder, bookmarks, hideActions) {
+function makeFolderHTML(folder, bookmarks) {
   const count = bookmarks.length + folder.childrenCount;
   let childrenHTML = '';
 
   if (folder.children && folder.children.length) {
     childrenHTML += folder.children.map(f =>
-      makeFolderHTML(f, state.bookmarks.filter(b => b.folderId === f.id), false)
+      makeFolderHTML(f, state.bookmarks.filter(b => b.folderId === f.id))
     ).join('');
   }
 
@@ -172,7 +172,7 @@ function render() {
       ...root,
       children: userFolders.map(f => ({ ...f, children: [] })),
     };
-    document.getElementById('folders-list').innerHTML = makeFolderHTML(rootWithChildren, rootBms, true);
+    document.getElementById('folders-list').innerHTML = makeFolderHTML(rootWithChildren, rootBms);
     const total = rootBms.length + userFolders.length;
     document.getElementById('folders-count').textContent = total > 0 ? `(${total})` : '';
   } else {
@@ -222,6 +222,18 @@ function openFolderModal(folder = {}) {
   form.elements.name.focus();
 }
 
+function onDragOver(e) { e.preventDefault(); }
+
+async function onDrop(e, folderId, pinned) {
+  e.preventDefault();
+  const url = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain') || '';
+  if (!url || !url.startsWith('http')) return;
+  const title = e.dataTransfer.getData('text/plain') || url;
+  await addBookmark({ title: title.slice(0, 200), url, folderId, pinned });
+  toast('Bookmark added' + (pinned ? ' (pinned)' : ''));
+  await refresh();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   applyTheme();
   applySearchVisibility();
@@ -253,18 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
     await chrome.storage.local.set({ [SEARCH_VISIBLE_KEY]: !nowHidden });
     if (!nowHidden) document.getElementById('search-input').focus();
   });
-
-  function onDragOver(e) { e.preventDefault(); }
-
-  async function onDrop(e, folderId, pinned) {
-    e.preventDefault();
-    const url = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain') || '';
-    if (!url || !url.startsWith('http')) return;
-    const title = e.dataTransfer.getData('text/plain') || url;
-    await addBookmark({ title: title.slice(0, 200), url, folderId, pinned });
-    toast('Bookmark added' + (pinned ? ' (pinned)' : ''));
-    await refresh();
-  }
 
   document.getElementById('section-pinned').addEventListener('dragover', onDragOver);
   document.getElementById('section-pinned').addEventListener('drop', (e) => onDrop(e, null, true));
