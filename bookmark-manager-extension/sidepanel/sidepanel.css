@@ -152,6 +152,7 @@ body {
 }
 
 .search-hidden .header__search { display: none; }
+.search-hidden .header__top { margin-bottom: 0; }
 
 .header__search input {
   flex: 1;

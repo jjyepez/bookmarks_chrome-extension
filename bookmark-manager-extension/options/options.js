@@ -142,12 +142,23 @@ document.getElementById('clear-btn').addEventListener('click', async () => {
 
 const THEME_KEY = 'bm_theme';
 const SHOW_URL_KEY = 'bm_show_url';
+const SIDEBAR_TITLE_KEY = 'bm_sidebar_title';
 
 async function loadDisplaySettings() {
-  const result = await chrome.storage.local.get([THEME_KEY, SHOW_URL_KEY]);
+  const result = await chrome.storage.local.get([THEME_KEY, SHOW_URL_KEY, SIDEBAR_TITLE_KEY]);
   document.getElementById('theme-select').value = result[THEME_KEY] || 'system';
+  document.getElementById('sidebar-title-input').value = result[SIDEBAR_TITLE_KEY] || '';
   document.getElementById('show-url-check').checked = result[SHOW_URL_KEY] === true;
 }
+
+let titleTimeout;
+document.getElementById('sidebar-title-input').addEventListener('input', async (e) => {
+  clearTimeout(titleTimeout);
+  titleTimeout = setTimeout(async () => {
+    await chrome.storage.local.set({ [SIDEBAR_TITLE_KEY]: e.target.value });
+    setStatus('Sidebar title saved.');
+  }, 400);
+});
 
 document.getElementById('theme-select').addEventListener('change', async (e) => {
   await chrome.storage.local.set({ [THEME_KEY]: e.target.value });

@@ -5,11 +5,12 @@ import {
 
 const THEME_KEY = 'bm_theme';
 const SHOW_URL_KEY = 'bm_show_url';
+const SIDEBAR_TITLE_KEY = 'bm_sidebar_title';
 
 let showUrl = false;
 
 async function applyTheme() {
-  const result = await chrome.storage.local.get(THEME_KEY);
+  const result = await chrome.storage.local.get([THEME_KEY, SHOW_URL_KEY, SIDEBAR_TITLE_KEY]);
   const theme = result[THEME_KEY] || 'system';
   if (theme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
@@ -18,7 +19,11 @@ async function applyTheme() {
   } else {
     document.documentElement.removeAttribute('data-theme');
   }
-  showUrl = (await chrome.storage.local.get(SHOW_URL_KEY))[SHOW_URL_KEY] === true;
+  showUrl = result[SHOW_URL_KEY] === true;
+  const titleEl = document.getElementById('sidebar-title');
+  if (titleEl && result[SIDEBAR_TITLE_KEY]) {
+    titleEl.textContent = result[SIDEBAR_TITLE_KEY];
+  }
 }
 
 let state = { bookmarks: [], folders: [] };
@@ -39,7 +44,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (changes.bm_data) {
       refresh();
     }
-    if (changes.bm_theme || changes[SHOW_URL_KEY]) {
+    if (changes.bm_theme || changes[SHOW_URL_KEY] || changes[SIDEBAR_TITLE_KEY]) {
       applyTheme().then(() => render());
     }
     if (changes.bm_search_visible) {
