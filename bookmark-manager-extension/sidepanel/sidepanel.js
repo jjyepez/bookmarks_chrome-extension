@@ -23,14 +23,14 @@ async function applyTheme() {
 
 let state = { bookmarks: [], folders: [] };
 let searchQuery = '';
-let collapsedSections = [];
+let collapsedSections = ['pinned', 'recent', 'folders'];
 
 const SECTIONS_KEY = 'bm_collapsed_sections';
 const SEARCH_VISIBLE_KEY = 'bm_search_visible';
 
 async function applySearchVisibility() {
   const result = await chrome.storage.local.get(SEARCH_VISIBLE_KEY);
-  const visible = result[SEARCH_VISIBLE_KEY] !== false;
+  const visible = result[SEARCH_VISIBLE_KEY] === true;
   document.querySelector('.header').classList.toggle('search-hidden', !visible);
 }
 
