@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bookmark Manager — Settings</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f5f5;
+      color: #212529;
+      padding: 32px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    p { color: #6c757d; margin-bottom: 24px; }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      margin-bottom: 16px;
+    }
+    .card h2 { font-size: 16px; margin-bottom: 12px; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .stat { text-align: center; }
+    .stat__value { font-size: 28px; font-weight: 700; color: #1f93ff; }
+    .stat__label { font-size: 12px; color: #6c757d; margin-top: 4px; }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      font-size: 13px;
+      cursor: pointer;
+      background: #fff;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    .btn--primary { background: #1f93ff; color: #fff; border-color: #1f93ff; }
+    .btn--primary:hover { background: #1976d2; }
+    .btn--danger { color: #e53935; border-color: #e53935; }
+    .btn--danger:hover { background: #fff5f5; }
+    #status { margin-top: 12px; font-size: 13px; color: #2e7d32; }
+    .tree { margin-top: 8px; }
+    .tree-item {
+      padding: 4px 0 4px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      border-radius: 4px;
+    }
+    .tree-item:hover { background: #f0f0f0; }
+    .tree-item input { margin: 0; }
+    .tree-item label { cursor: pointer; flex: 1; }
+    .tree-children { display: none; }
+    .tree-children.open { display: block; }
+    .toggle-icon { font-size: 10px; width: 14px; text-align: center; user-select: none; }
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.4);
+      align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.is-open { display: flex; }
+    .modal {
+      background: #fff; border-radius: 12px;
+      width: 480px; max-height: 80vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 8px 32px rgba(0,0,0,.2);
+    }
+    .modal__header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 18px; border-bottom: 1px solid #e0e0e0;
+    }
+    .modal__header h3 { font-size: 16px; font-weight: 600; }
+    .modal__close {
+      background: none; border: none; font-size: 22px;
+      cursor: pointer; padding: 2px 8px; border-radius: 4px;
+    }
+    .modal__close:hover { background: #f0f0f0; }
+    .modal__body { flex: 1; overflow-y: auto; padding: 12px 18px; }
+    .modal__footer {
+      padding: 12px 18px; border-top: 1px solid #e0e0e0;
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Bookmark Manager</h1>
+  <p>Manage your extension settings and data.</p>
+
+  <div class="card">
+    <h2>Statistics</h2>
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="stat__value" id="stat-bookmarks">0</div>
+        <div class="stat__label">Bookmarks</div>
+      </div>
+      <div class="stat">
+        <div class="stat__value" id="stat-folders">0</div>
+        <div class="stat__label">Folders</div>
+      </div>
+      <div class="stat">
+        <div class="stat__value" id="stat-pinned">0</div>
+        <div class="stat__label">Pinned</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Import</h2>
+    <button id="import-chrome-btn" class="btn btn--primary">Import from Chrome Bookmarks</button>
+    <p style="color:#6c757d;font-size:13px;margin-top:8px">
+      Imports all your Chrome bookmarks into Bookmark Manager. Existing data is preserved.
+    </p>
+    <div id="status"></div>
+  </div>
+
+  <div class="card">
+    <h2>Display</h2>
+    <label style="font-size:13px;font-weight:500;display:block;margin-bottom:4px;color:#6c757d">Theme</label>
+    <select id="theme-select" style="padding:8px;border-radius:8px;border:1px solid #e0e0e0;font-size:13px;width:100%">
+      <option value="system">System default</option>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer;font-size:14px">
+      <input type="checkbox" id="show-url-check" checked />
+      Show URL in bookmark items
+    </label>
+    <p style="color:#6c757d;font-size:13px;margin-top:8px">
+      Choose a theme for the side panel. "System default" follows your OS/browser setting.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Data</h2>
+    <button id="export-btn" class="btn">Export as JSON</button>
+    <button id="import-json-btn" class="btn">Import from JSON</button>
+    <input type="file" id="import-file" accept=".json" hidden />
+    <button id="clear-btn" class="btn btn--danger">Clear all data</button>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>
