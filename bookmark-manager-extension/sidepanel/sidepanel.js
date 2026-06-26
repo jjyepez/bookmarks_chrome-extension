@@ -6,7 +6,7 @@ import {
 const THEME_KEY = 'bm_theme';
 const SHOW_URL_KEY = 'bm_show_url';
 
-let showUrl = true;
+let showUrl = false;
 
 async function applyTheme() {
   const result = await chrome.storage.local.get(THEME_KEY);
@@ -18,7 +18,7 @@ async function applyTheme() {
   } else {
     document.documentElement.removeAttribute('data-theme');
   }
-  showUrl = (await chrome.storage.local.get(SHOW_URL_KEY))[SHOW_URL_KEY] !== false;
+  showUrl = (await chrome.storage.local.get(SHOW_URL_KEY))[SHOW_URL_KEY] === true;
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
