@@ -21,6 +21,19 @@ async function applyTheme() {
   showUrl = (await chrome.storage.local.get(SHOW_URL_KEY))[SHOW_URL_KEY] === true;
 }
 
+let state = { bookmarks: [], folders: [] };
+let searchQuery = '';
+let collapsedSections = [];
+
+const SECTIONS_KEY = 'bm_collapsed_sections';
+const SEARCH_VISIBLE_KEY = 'bm_search_visible';
+
+async function applySearchVisibility() {
+  const result = await chrome.storage.local.get(SEARCH_VISIBLE_KEY);
+  const visible = result[SEARCH_VISIBLE_KEY] !== false;
+  document.querySelector('.header').classList.toggle('search-hidden', !visible);
+}
+
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local') {
     if (changes.bm_data) {
@@ -34,12 +47,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
     }
   }
 });
-
-let state = { bookmarks: [], folders: [] };
-let searchQuery = '';
-let collapsedSections = [];
-
-const SECTIONS_KEY = 'bm_collapsed_sections';
 
 async function loadCollapsedSections() {
   const result = await chrome.storage.local.get(SECTIONS_KEY);
@@ -238,14 +245,6 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     chrome.runtime.openOptionsPage();
   });
-
-  const SEARCH_VISIBLE_KEY = 'bm_search_visible';
-
-  async function applySearchVisibility() {
-    const result = await chrome.storage.local.get(SEARCH_VISIBLE_KEY);
-    const visible = result[SEARCH_VISIBLE_KEY] !== false;
-    document.querySelector('.header').classList.toggle('search-hidden', !visible);
-  }
 
   document.getElementById('toggle-search').addEventListener('click', async (e) => {
     e.preventDefault();
