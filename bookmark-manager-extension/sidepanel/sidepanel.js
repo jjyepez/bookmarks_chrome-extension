@@ -105,11 +105,12 @@ function makeFolderHTML(folder, bookmarks, hideActions) {
 
   const iconColor = folder.color ? `style="color:${folder.color}"` : '';
   const iconName = folder.system ? 'folder_open' : 'folder';
+  const isSystem = !!folder.system;
 
   return `
-    <div class="folder-group" data-folder-id="${folder.id}">
-      <div class="folder-item" data-id="${folder.id}" data-type="folder" data-system="${folder.system ? 'true' : ''}">
-        <span class="material-symbols-outlined folder-item__chevron">chevron_right</span>
+    <div class="folder-group${isSystem ? ' open' : ''}" data-folder-id="${folder.id}">
+      <div class="folder-item" data-id="${folder.id}" data-type="folder" data-system="${isSystem ? 'true' : ''}">
+        ${isSystem ? '' : '<span class="material-symbols-outlined folder-item__chevron">chevron_right</span>'}
         <span class="material-symbols-outlined folder-item__icon" ${iconColor}>${iconName}</span>
         <span class="folder-item__name">${escHtml(folder.name)}</span>
         <span class="folder-item__count">${count}</span>
@@ -349,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    if (folderItem && !e.target.closest('[data-action]')) {
+    if (folderItem && !e.target.closest('[data-action]') && folderItem.dataset.system !== 'true') {
       folderGroup.classList.toggle('open');
       return;
     }
