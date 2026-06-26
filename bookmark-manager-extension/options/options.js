@@ -146,7 +146,7 @@ const SHOW_URL_KEY = 'bm_show_url';
 async function loadDisplaySettings() {
   const result = await chrome.storage.local.get([THEME_KEY, SHOW_URL_KEY]);
   document.getElementById('theme-select').value = result[THEME_KEY] || 'system';
-  document.getElementById('show-url-check').checked = result[SHOW_URL_KEY] !== false;
+  document.getElementById('show-url-check').checked = result[SHOW_URL_KEY] === true;
 }
 
 document.getElementById('theme-select').addEventListener('change', async (e) => {
