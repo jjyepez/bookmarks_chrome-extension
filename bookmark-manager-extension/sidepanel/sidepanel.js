@@ -266,11 +266,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('content').addEventListener('dragover', (e) => {
     const folderGroup = e.target.closest('.folder-group');
-    if (folderGroup) e.preventDefault();
+    const rootDrop = e.target.closest('#root-drop');
+    if (folderGroup || rootDrop) e.preventDefault();
   });
-
-  document.getElementById('root-drop').addEventListener('dragover', onDragOver);
-  document.getElementById('root-drop').addEventListener('drop', (e) => onDrop(e, null, false));
 
   document.getElementById('content').addEventListener('drop', async (e) => {
     const folderGroup = e.target.closest('.folder-group');
