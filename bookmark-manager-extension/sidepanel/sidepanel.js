@@ -428,15 +428,41 @@ document.addEventListener('DOMContentLoaded', () => {
   const ctxMenu = document.getElementById('context-menu');
   let ctxTargetId = null;
   let ctxType = null;
+  let ctxSection = null;
 
   function closeContextMenu() {
     ctxMenu.classList.remove('is-open');
     ctxMenu.style.display = 'none';
     ctxTargetId = null;
     ctxType = null;
+    ctxSection = null;
   }
 
   document.getElementById('content').addEventListener('contextmenu', (e) => {
+    const sectionTitle = e.target.closest('.section__title--toggle');
+    if (sectionTitle) {
+      e.preventDefault();
+      ctxSection = sectionTitle.dataset.section;
+      ctxTargetId = null;
+      ctxType = 'section';
+
+      const showAll = ctxSection === 'folders';
+      document.getElementById('ctx-section-items').hidden = false;
+      document.getElementById('ctx-item-items').hidden = true;
+
+      document.querySelector('#ctx-section-items [data-action="add-folder-section"]').hidden = !showAll;
+      document.querySelector('#ctx-section-items [data-action="add-bookmark-section"]').hidden = !showAll;
+
+      const tabLabel = ctxSection === 'pinned' ? 'Add current tab (pinned)' : 'Add current tab';
+      document.querySelector('#ctx-section-items [data-action="add-tab-section"]').textContent = tabLabel;
+
+      ctxMenu.style.left = e.clientX + 'px';
+      ctxMenu.style.top = e.clientY + 'px';
+      ctxMenu.style.display = 'block';
+      requestAnimationFrame(() => ctxMenu.classList.add('is-open'));
+      return;
+    }
+
     const item = e.target.closest('[data-id]');
     if (!item) return;
     e.preventDefault();
@@ -449,6 +475,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isSystem) return;
 
+    document.getElementById('ctx-section-items').hidden = true;
+    document.getElementById('ctx-item-items').hidden = false;
     document.getElementById('ctx-open').style.display = isFolder ? 'none' : '';
     document.getElementById('ctx-edit').style.display = isSystem ? 'none' : '';
     document.getElementById('ctx-edit').textContent = isFolder ? 'Edit Folder' : 'Edit';
@@ -456,6 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('context-move-folder').style.display = isFolder ? 'none' : '';
     document.getElementById('ctx-delete').style.display = isSystem ? 'none' : '';
     document.getElementById('context-folder-list').style.display = 'none';
+    document.getElementById('ctx-divider').hidden = isSystem;
     if (!isFolder) {
       const bm = state.bookmarks.find(b => b.id === ctxTargetId);
       document.getElementById('ctx-pin').textContent = bm?.pinned ? 'Unpin' : 'Pin';
@@ -500,6 +529,17 @@ document.addEventListener('DOMContentLoaded', () => {
         toast('Bookmark moved');
         await refresh();
       }
+    } else if (action === 'add-tab-section') {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab) return;
+      const pinned = ctxSection === 'pinned';
+      await addBookmark({ title: tab.title, url: tab.url, pinned });
+      toast('Bookmark added' + (pinned ? ' (pinned)' : ''));
+      await refresh();
+    } else if (action === 'add-bookmark-section') {
+      openBookmarkModal();
+    } else if (action === 'add-folder-section') {
+      openFolderModal();
     } else if (action === 'delete') {
       if (targetType === 'folder') {
         try {
