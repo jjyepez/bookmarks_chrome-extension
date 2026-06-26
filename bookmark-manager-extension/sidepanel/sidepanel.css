@@ -132,6 +132,8 @@ body {
   margin-bottom: 6px;
 }
 
+.search-hidden .header__search { display: none; }
+
 .header__search input {
   flex: 1;
   padding: 6px 30px 6px 10px;
