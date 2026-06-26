@@ -270,6 +270,7 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
+  line-height: 1;
 }
 
 .section__count {
@@ -295,6 +296,7 @@ body {
   border-radius: 6px;
   cursor: pointer;
   transition: background .1s;
+  line-height: 1.3;
 }
 
 .bookmark-item:hover {
@@ -313,12 +315,17 @@ body {
   height: 16px;
   flex-shrink: 0;
   border-radius: 2px;
+  line-height: 1;
 }
 
 .bookmark-item__info {
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1;
 }
 
 .bookmark-item__title {
@@ -327,6 +334,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
 }
 
 .bookmark-item__url {
@@ -335,6 +343,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
 }
 
 .bookmark-item__url.hidden {
@@ -359,6 +368,7 @@ body {
   border-radius: 6px;
   cursor: pointer;
   transition: background .1s;
+  line-height: 1.3;
 }
 
 .folder-item:hover {
@@ -375,12 +385,16 @@ body {
 .folder-item__icon {
   font-size: 16px;
   flex-shrink: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
 }
 
 .folder-item__name {
   flex: 1;
   font-size: 13px;
   font-weight: 500;
+  line-height: 1.3;
 }
 
 .folder-item__count {
