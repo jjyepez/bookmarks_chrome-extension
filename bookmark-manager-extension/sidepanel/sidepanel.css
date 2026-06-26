@@ -64,6 +64,25 @@
   --folder-children-border: #2a2a4a;
 }
 
+[data-theme="light"] {
+  --bg: #ffffff;
+  --surface: #f8f9fa;
+  --border: #e0e0e0;
+  --text: #212529;
+  --text-secondary: #6c757d;
+  --primary: #1f93ff;
+  --primary-hover: #1976d2;
+  --danger: #e53935;
+  --shadow: 0 2px 8px rgba(0,0,0,.12);
+  --context-menu-bg: #ffffff;
+  --context-menu-hover: #f0f0f0;
+  --context-menu-danger-bg: #fff5f5;
+  --toast-bg: #323232;
+  --toast-text: #ffffff;
+  --modal-overlay: rgba(0,0,0,.4);
+  --folder-children-border: #e0e0e0;
+}
+
 body {
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 14px;
@@ -132,6 +151,8 @@ body {
   margin-bottom: 6px;
 }
 
+.search-hidden .header__search { display: none; }
+
 .header__search input {
   flex: 1;
   padding: 6px 30px 6px 10px;
@@ -149,11 +170,6 @@ body {
   position: absolute;
   right: 6px;
   font-size: 16px;
-}
-
-.header__actions {
-  display: flex;
-  gap: 6px;
 }
 
 .btn {
@@ -190,18 +206,6 @@ body {
 .btn--small {
   padding: 3px 8px;
   font-size: 11px;
-}
-
-.btn-icon-only {
-  padding: 6px;
-  min-width: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-icon-only .btn-icon-symbol {
-  font-size: 18px;
 }
 
 .btn-icon {
@@ -270,6 +274,7 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
+  line-height: 1;
 }
 
 .section__count {
@@ -295,20 +300,14 @@ body {
   border-radius: 6px;
   cursor: pointer;
   transition: background .1s;
+  line-height: 1.3;
 }
 
 .bookmark-item:hover {
   background: var(--surface);
 }
 
-.bookmark-item__color {
-  width: 3px;
-  height: 28px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-.bookmark-item__icon {
+.bookmark-item__favicon {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
@@ -319,6 +318,10 @@ body {
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1;
 }
 
 .bookmark-item__title {
@@ -327,6 +330,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
 }
 
 .bookmark-item__url {
@@ -335,6 +339,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
 }
 
 .bookmark-item__url.hidden {
@@ -359,28 +364,26 @@ body {
   border-radius: 6px;
   cursor: pointer;
   transition: background .1s;
+  line-height: 1.3;
 }
 
 .folder-item:hover {
   background: var(--surface);
 }
 
-.folder-item__color {
-  width: 3px;
-  height: 28px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
 .folder-item__icon {
   font-size: 16px;
   flex-shrink: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
 }
 
 .folder-item__name {
   flex: 1;
   font-size: 13px;
   font-weight: 500;
+  line-height: 1.3;
 }
 
 .folder-item__count {
@@ -398,17 +401,27 @@ body {
   flex-shrink: 0;
 }
 
-.folder-item__toggle {
-  font-size: 10px;
-  color: var(--text-secondary);
-  flex-shrink: 0;
-  width: 12px;
-  text-align: center;
-  transition: transform .15s;
-}
-
 .folder-group {
   margin-bottom: 1px;
+}
+
+.folder-group .folder-children {
+  display: none;
+}
+
+.folder-group.open .folder-children {
+  display: block;
+}
+
+.folder-item__chevron {
+  font-size: 14px !important;
+  flex-shrink: 0;
+  transition: transform .15s;
+  line-height: 1;
+}
+
+.folder-group.open .folder-item__chevron {
+  transform: rotate(90deg);
 }
 
 .folder-children {
@@ -417,29 +430,10 @@ body {
   padding-left: 6px;
 }
 
-.root-drop {
-  padding: 6px 10px;
-  margin-bottom: 4px;
-  border: 2px dashed var(--border);
-  border-radius: 8px;
-  font-size: 11px;
-  color: var(--text-secondary);
-  text-align: center;
-  cursor: default;
-  transition: background .15s, border-color .15s;
-}
-
-.root-drop:hover {
-  background: var(--surface);
-  border-color: var(--primary);
-}
-
 .folder-empty {
   font-size: 11px;
   padding: 6px !important;
 }
-
-
 
 .empty-state {
   padding: 16px;
@@ -592,6 +586,8 @@ input[type="color"] {
   background: var(--context-menu-danger-bg);
 }
 
+.ctx-icon { font-size: 16px; line-height: 1; }
+
 .context-menu__divider {
   height: 1px;
   background: var(--border);
@@ -639,3 +635,8 @@ input[type="color"] {
   from { opacity: 0; transform: translateX(-50%) translateY(10px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }

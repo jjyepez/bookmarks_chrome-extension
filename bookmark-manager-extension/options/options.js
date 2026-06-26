@@ -146,12 +146,12 @@ const SHOW_URL_KEY = 'bm_show_url';
 async function loadDisplaySettings() {
   const result = await chrome.storage.local.get([THEME_KEY, SHOW_URL_KEY]);
   document.getElementById('theme-select').value = result[THEME_KEY] || 'system';
-  document.getElementById('show-url-check').checked = result[SHOW_URL_KEY] !== false;
+  document.getElementById('show-url-check').checked = result[SHOW_URL_KEY] === true;
 }
 
 document.getElementById('theme-select').addEventListener('change', async (e) => {
   await chrome.storage.local.set({ [THEME_KEY]: e.target.value });
-  setStatus('Theme saved. Reopen the side panel to see changes.');
+  setStatus('Theme applied immediately.');
 });
 
 document.getElementById('show-url-check').addEventListener('change', async (e) => {
