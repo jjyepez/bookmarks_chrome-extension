@@ -2,9 +2,10 @@ const STORAGE_KEY = 'bm_data';
 const ROOT_FOLDER_NAME = 'Root';
 
 const DEFAULT_DATA = {
-  version: 2,
+  version: 3,
   folders: [],
   bookmarks: [],
+  notes: [],
 };
 
 function uid() {
@@ -16,6 +17,10 @@ async function load() {
   let data = result[STORAGE_KEY];
   if (!data) {
     data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    await save(data);
+  }
+  if (!data.notes) {
+    data.notes = [];
     await save(data);
   }
   await ensureRoot(data);
@@ -160,4 +165,36 @@ export function getRecent(data, limit = 5) {
 
 export function getPinned(data) {
   return data.bookmarks.filter(b => b.pinned);
+}
+
+export async function addNote({ content, color }) {
+  const data = await load();
+  if (!data.notes) data.notes = [];
+  const note = {
+    id: uid(),
+    content: content || '',
+    color: color || '#fff9c4',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  data.notes.push(note);
+  await save(data);
+  return note;
+}
+
+export async function updateNote(id, changes) {
+  const data = await load();
+  if (!data.notes) data.notes = [];
+  const idx = data.notes.findIndex(n => n.id === id);
+  if (idx === -1) throw new Error('Note not found');
+  data.notes[idx] = { ...data.notes[idx], ...changes, updatedAt: Date.now() };
+  await save(data);
+  return data.notes[idx];
+}
+
+export async function deleteNote(id) {
+  const data = await load();
+  if (!data.notes) data.notes = [];
+  data.notes = data.notes.filter(n => n.id !== id);
+  await save(data);
 }
