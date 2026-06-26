@@ -18,6 +18,10 @@
           <a href="#" id="open-options" class="header__link" title="Settings"><span class="material-symbols-outlined">settings</span></a>
         </div>
       </div>
+      <div class="view-toggle" id="view-toggle">
+        <button class="view-toggle__btn is-active" data-view="bookmarks">Bookmarks</button>
+        <button class="view-toggle__btn" data-view="notes">Notes</button>
+      </div>
       <div class="header__search">
         <span class="material-symbols-outlined search-icon">search</span>
         <input type="text" id="search-input" placeholder="Search bookmarks..." />
@@ -27,30 +31,36 @@
     </header>
 
     <main class="content" id="content">
-      <section id="section-pinned" class="section" data-section="pinned">
-        <h2 class="section__title section__title--toggle" data-section="pinned">
-          <span class="material-symbols-outlined section__chevron">chevron_right</span>
-          <span class="material-symbols-outlined" style="font-size:16px">push_pin</span> Pinned
-          <span class="section__count" id="pinned-count"></span>
-        </h2>
-        <div id="pinned-list" class="bookmark-list"></div>
-      </section>
-      <section id="section-recent" class="section" data-section="recent">
-        <h2 class="section__title section__title--toggle" data-section="recent">
-          <span class="material-symbols-outlined section__chevron">chevron_right</span>
-          <span class="material-symbols-outlined" style="font-size:16px">history</span> Recent
-          <span class="section__count" id="recent-count"></span>
-        </h2>
-        <div id="recent-list" class="bookmark-list"></div>
-      </section>
-      <section id="section-folders" class="section" data-section="folders">
-        <h2 class="section__title section__title--toggle" data-section="folders">
-          <span class="material-symbols-outlined section__chevron">chevron_right</span>
-          <span class="material-symbols-outlined" style="font-size:16px">folder</span> Folders
-          <span class="section__count" id="folders-count"></span>
-        </h2>
-        <div id="folders-list" class="bookmark-list"></div>
-      </section>
+      <div id="bookmarks-view">
+        <section id="section-pinned" class="section" data-section="pinned">
+          <h2 class="section__title section__title--toggle" data-section="pinned">
+            <span class="material-symbols-outlined section__chevron">chevron_right</span>
+            <span class="material-symbols-outlined" style="font-size:16px">push_pin</span> Pinned
+            <span class="section__count" id="pinned-count"></span>
+          </h2>
+          <div id="pinned-list" class="bookmark-list"></div>
+        </section>
+        <section id="section-recent" class="section" data-section="recent">
+          <h2 class="section__title section__title--toggle" data-section="recent">
+            <span class="material-symbols-outlined section__chevron">chevron_right</span>
+            <span class="material-symbols-outlined" style="font-size:16px">history</span> Recent
+            <span class="section__count" id="recent-count"></span>
+          </h2>
+          <div id="recent-list" class="bookmark-list"></div>
+        </section>
+        <section id="section-folders" class="section" data-section="folders">
+          <h2 class="section__title section__title--toggle" data-section="folders">
+            <span class="material-symbols-outlined section__chevron">chevron_right</span>
+            <span class="material-symbols-outlined" style="font-size:16px">folder</span> Folders
+            <span class="section__count" id="folders-count"></span>
+          </h2>
+          <div id="folders-list" class="bookmark-list"></div>
+        </section>
+      </div>
+      <div id="notes-view" class="notes-view" style="display:none">
+        <div id="notes-board" class="notes-board"></div>
+        <button id="add-note-btn" class="add-note-btn"><span class="material-symbols-outlined">add</span></button>
+      </div>
     </main>
 
     <div id="toast" class="toast" hidden></div>

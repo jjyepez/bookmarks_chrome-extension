@@ -1,16 +1,18 @@
 import {
   getAll, getFolders, addBookmark, updateBookmark, deleteBookmark, togglePin,
-  addFolder, updateFolder, deleteFolder
+  addFolder, updateFolder, deleteFolder, addNote, updateNote, deleteNote,
 } from '../shared/store.js';
 
 const THEME_KEY = 'bm_theme';
 const SHOW_URL_KEY = 'bm_show_url';
 const SIDEBAR_TITLE_KEY = 'bm_sidebar_title';
+const ACTIVE_VIEW_KEY = 'bm_active_view';
 
 let showUrl = false;
+let activeView = 'bookmarks';
 
 async function applyTheme() {
-  const result = await chrome.storage.local.get([THEME_KEY, SHOW_URL_KEY, SIDEBAR_TITLE_KEY]);
+  const result = await chrome.storage.local.get([THEME_KEY, SHOW_URL_KEY, SIDEBAR_TITLE_KEY, ACTIVE_VIEW_KEY]);
   const theme = result[THEME_KEY] || 'system';
   if (theme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
@@ -24,9 +26,10 @@ async function applyTheme() {
   if (titleEl && result[SIDEBAR_TITLE_KEY]) {
     titleEl.textContent = result[SIDEBAR_TITLE_KEY];
   }
+  activeView = result[ACTIVE_VIEW_KEY] || 'bookmarks';
 }
 
-let state = { bookmarks: [], folders: [] };
+let state = { bookmarks: [], folders: [], notes: [] };
 let searchQuery = '';
 let collapsedSections = ['pinned', 'recent', 'folders'];
 
@@ -44,8 +47,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (changes.bm_data) {
       refresh();
     }
-    if (changes.bm_theme || changes[SHOW_URL_KEY] || changes[SIDEBAR_TITLE_KEY]) {
-      applyTheme().then(() => render());
+    if (changes.bm_theme || changes[SHOW_URL_KEY] || changes[SIDEBAR_TITLE_KEY] || changes[ACTIVE_VIEW_KEY]) {
+      applyTheme().then(() => {
+        updateViewToggle();
+        render();
+      });
     }
     if (changes.bm_search_visible) {
       applySearchVisibility();
@@ -185,6 +191,30 @@ function render() {
   }
 
   document.getElementById('count-label').textContent = state.bookmarks.length;
+  renderNotes();
+}
+
+function updateViewToggle() {
+  document.querySelectorAll('.view-toggle__btn').forEach(btn => {
+    btn.classList.toggle('is-active', btn.dataset.view === activeView);
+  });
+  document.getElementById('bookmarks-view').style.display = activeView === 'bookmarks' ? '' : 'none';
+  document.getElementById('notes-view').style.display = activeView === 'notes' ? '' : 'none';
+}
+
+function renderNotes() {
+  const notes = state.notes || [];
+  const board = document.getElementById('notes-board');
+  if (!notes.length) {
+    board.innerHTML = '<div class="empty-state">No notes yet</div>';
+    return;
+  }
+  board.innerHTML = notes.map(n => `
+    <div class="note-card" data-id="${n.id}" style="background:${n.color}">
+      <button class="note-card__delete" data-action="delete-note"><span class="material-symbols-outlined" style="font-size:14px">close</span></button>
+      <textarea class="note-card__text" data-action="note-text">${escHtml(n.content)}</textarea>
+    </div>
+  `).join('');
 }
 
 async function openBookmarkModal(bm = {}) {
@@ -243,6 +273,30 @@ document.addEventListener('DOMContentLoaded', () => {
   applySearchVisibility();
   loadCollapsedSections();
   refresh();
+  updateViewToggle();
+
+  document.getElementById('view-toggle').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.view-toggle__btn');
+    if (!btn) return;
+    activeView = btn.dataset.view;
+    await chrome.storage.local.set({ [ACTIVE_VIEW_KEY]: activeView });
+    updateViewToggle();
+    render();
+  });
+
+  document.getElementById('add-note-btn').addEventListener('click', async () => {
+    await addNote({ content: '', color: '#fff9c4' });
+    toast('Note added');
+    await refresh();
+  });
+
+  document.getElementById('notes-board').addEventListener('change', async (e) => {
+    const textarea = e.target.closest('.note-card__text');
+    if (!textarea) return;
+    const card = textarea.closest('.note-card');
+    if (!card) return;
+    await updateNote(card.dataset.id, { content: textarea.value });
+  });
 
   document.getElementById('search-input').addEventListener('input', (e) => {
     searchQuery = e.target.value;
@@ -387,6 +441,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (bm) openBookmarkModal(bm);
     } else if (action === 'toggle-pin') {
       await togglePin(id);
+      await refresh();
+    } else if (action === 'delete-note') {
+      await deleteNote(id);
+      toast('Note deleted');
       await refresh();
     } else if (action === 'delete') {
       if (confirm('Delete this bookmark?')) {

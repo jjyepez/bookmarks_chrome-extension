@@ -154,6 +154,125 @@ body {
 .search-hidden .header__search { display: none; }
 .search-hidden .header__top { margin-bottom: 0; }
 
+.view-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 2px;
+  margin-bottom: 6px;
+}
+
+.view-toggle__btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.view-toggle__btn.is-active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+
+.notes-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.notes-board {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.note-card {
+  width: calc(50% - 4px);
+  min-height: 80px;
+  border-radius: 8px;
+  padding: 8px;
+  position: relative;
+  cursor: text;
+  box-shadow: 0 1px 4px rgba(0,0,0,.1);
+  transition: box-shadow .15s;
+}
+
+.note-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+
+.note-card__delete {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: rgba(0,0,0,.1);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+}
+
+.note-card:hover .note-card__delete {
+  display: flex;
+}
+
+.note-card__text {
+  width: 100%;
+  min-height: 60px;
+  border: none;
+  background: transparent;
+  resize: none;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  color: inherit;
+  outline: none;
+}
+
+.add-note-btn {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 8px;
+  transition: all .15s;
+}
+
+.add-note-btn:hover {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--text-secondary);
+}
+
 .header__search input {
   flex: 1;
   padding: 6px 30px 6px 10px;
