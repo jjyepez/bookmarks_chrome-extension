@@ -27,4 +27,5 @@ Main workspace for software development tasks.
 - Do not commit directly to `main` or `develop`; always use feature/hotfix branches.
 - Feature branches branch from `develop` and merge back into `develop`.
 - Hotfixes branch from `main` and merge into both `main` and `develop`.
-- Do not run `commit`, `push`, `reset`, `rebase`, or similar mutations unless explicitly requested.
+- Commit after completing each feature or fix, following gitflow (feature branch → merge to develop).
+- Do not run `push`, `reset`, `rebase`, or similar mutations unless explicitly requested.
