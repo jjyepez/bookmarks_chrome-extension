@@ -509,6 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const action = actionItem.dataset.action;
     const targetId = ctxTargetId;
     const targetType = ctxType;
+    const targetSection = ctxSection;
     const folderId = actionItem.dataset.folder || null;
     closeContextMenu();
 
@@ -539,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (action === 'add-tab-section') {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab) return;
-      const pinned = ctxSection === 'pinned';
+      const pinned = targetSection === 'pinned';
       await addBookmark({ title: tab.title, url: tab.url, pinned });
       toast('Bookmark added' + (pinned ? ' (pinned)' : ''));
       await refresh();
