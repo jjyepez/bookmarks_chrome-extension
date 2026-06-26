@@ -173,14 +173,6 @@ function render() {
   document.getElementById('count-label').textContent = state.bookmarks.length;
 }
 
-async function addCurrentTab() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab) return;
-  await addBookmark({ title: tab.title, url: tab.url, pinned: false });
-  toast('Bookmark added: ' + tab.title);
-  await refresh();
-}
-
 async function openBookmarkModal(bm = {}) {
   const overlay = document.getElementById('modal-overlay');
   const form = document.getElementById('modal-form');
@@ -224,12 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
   applyTheme();
   loadCollapsedSections();
   refresh();
-
-  document.getElementById('add-current-tab').addEventListener('click', addCurrentTab);
-
-  document.getElementById('add-manual').addEventListener('click', () => openBookmarkModal());
-
-  document.getElementById('add-folder').addEventListener('click', () => openFolderModal());
 
   document.getElementById('search-input').addEventListener('input', (e) => {
     searchQuery = e.target.value;
