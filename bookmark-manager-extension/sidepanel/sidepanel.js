@@ -29,6 +29,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (changes.bm_theme || changes[SHOW_URL_KEY]) {
       applyTheme().then(() => render());
     }
+    if (changes.bm_search_visible) {
+      applySearchVisibility();
+    }
   }
 });
 
@@ -214,6 +217,7 @@ function openFolderModal(folder = {}) {
 
 document.addEventListener('DOMContentLoaded', () => {
   applyTheme();
+  applySearchVisibility();
   loadCollapsedSections();
   refresh();
 
@@ -233,6 +237,22 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('open-options').addEventListener('click', (e) => {
     e.preventDefault();
     chrome.runtime.openOptionsPage();
+  });
+
+  const SEARCH_VISIBLE_KEY = 'bm_search_visible';
+
+  async function applySearchVisibility() {
+    const result = await chrome.storage.local.get(SEARCH_VISIBLE_KEY);
+    const visible = result[SEARCH_VISIBLE_KEY] !== false;
+    document.querySelector('.header').classList.toggle('search-hidden', !visible);
+  }
+
+  document.getElementById('toggle-search').addEventListener('click', async (e) => {
+    e.preventDefault();
+    const header = document.querySelector('.header');
+    const nowHidden = header.classList.toggle('search-hidden');
+    await chrome.storage.local.set({ [SEARCH_VISIBLE_KEY]: !nowHidden });
+    if (!nowHidden) document.getElementById('search-input').focus();
   });
 
   function onDragOver(e) { e.preventDefault(); }
