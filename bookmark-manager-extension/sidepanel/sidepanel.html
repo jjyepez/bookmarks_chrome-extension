@@ -22,7 +22,7 @@
         <input type="text" id="search-input" placeholder="Search bookmarks..." />
         <button id="search-clear" class="btn-icon" hidden><span class="material-symbols-outlined">close</span></button>
       </div>
-      <div class="header__actions">
+      <div class="header__actions" hidden>
         <button id="add-current-tab" class="btn btn--primary btn-icon-only" title="Add current tab"><span class="material-symbols-outlined btn-icon-symbol">add</span></button>
         <button id="add-manual" class="btn btn--outline btn-icon-only" title="Add bookmark"><span class="material-symbols-outlined btn-icon-symbol">bookmark_add</span></button>
         <button id="add-folder" class="btn btn--outline btn-icon-only" title="Add folder"><span class="material-symbols-outlined btn-icon-symbol">create_new_folder</span></button>
@@ -136,15 +136,22 @@
   </div>
 
   <div id="context-menu" class="context-menu">
-    <div class="context-menu__item" data-action="open" id="ctx-open"><span class="material-symbols-outlined ctx-icon">open_in_new</span> Open</div>
-    <div class="context-menu__item" data-action="edit" id="ctx-edit"><span class="material-symbols-outlined ctx-icon">edit</span> Edit</div>
-    <div class="context-menu__item" data-action="toggle-pin" id="ctx-pin"><span class="material-symbols-outlined ctx-icon">push_pin</span> Pin</div>
-    <div class="context-menu__item" data-action="move-folder" id="context-move-folder">
-      <span class="material-symbols-outlined ctx-icon">drive_file_move</span> Move to Folder ▸
-      <div class="context-menu__submenu" id="context-folder-list"></div>
+    <div class="context-menu__items" id="ctx-section-items" hidden>
+      <div class="context-menu__item" data-action="add-tab-section"><span class="material-symbols-outlined ctx-icon">add</span> Add current tab</div>
+      <div class="context-menu__item" data-action="add-bookmark-section"><span class="material-symbols-outlined ctx-icon">bookmark_add</span> Add bookmark</div>
+      <div class="context-menu__item" data-action="add-folder-section"><span class="material-symbols-outlined ctx-icon">create_new_folder</span> Create folder</div>
     </div>
-    <div class="context-menu__divider"></div>
-    <div class="context-menu__item context-menu__item--danger" data-action="delete" id="ctx-delete"><span class="material-symbols-outlined ctx-icon">delete</span> Delete</div>
+    <div class="context-menu__items" id="ctx-item-items">
+      <div class="context-menu__item" data-action="open" id="ctx-open"><span class="material-symbols-outlined ctx-icon">open_in_new</span> Open</div>
+      <div class="context-menu__item" data-action="edit" id="ctx-edit"><span class="material-symbols-outlined ctx-icon">edit</span> Edit</div>
+      <div class="context-menu__item" data-action="toggle-pin" id="ctx-pin"><span class="material-symbols-outlined ctx-icon">push_pin</span> Pin</div>
+      <div class="context-menu__item" data-action="move-folder" id="context-move-folder">
+        <span class="material-symbols-outlined ctx-icon">drive_file_move</span> Move to Folder ▸
+        <div class="context-menu__submenu" id="context-folder-list"></div>
+      </div>
+      <div class="context-menu__divider" id="ctx-divider"></div>
+      <div class="context-menu__item context-menu__item--danger" data-action="delete" id="ctx-delete"><span class="material-symbols-outlined ctx-icon">delete</span> Delete</div>
+    </div>
   </div>
 
   <script type="module" src="sidepanel.js"></script>
