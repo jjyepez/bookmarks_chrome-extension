@@ -117,8 +117,9 @@ function makeFolderHTML(folder, bookmarks, hideActions) {
         ${folder.label && !folder.system ? `<span class="folder-item__label">${escHtml(folder.label)}</span>` : ''}
       </div>
       <div class="folder-children">
+        ${nestedHTML}
         ${childrenHTML}
-        ${nestedHTML || '<div class="empty-state folder-empty">Empty</div>'}
+        ${!nestedHTML && !childrenHTML ? '<div class="empty-state folder-empty">Empty</div>' : ''}
       </div>
     </div>
   `;
@@ -468,18 +469,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const isFolder = ctxType === 'folder';
     const isSystem = item.dataset.system === 'true';
 
-    if (isSystem) return;
+    if (isSystem) {
+      document.getElementById('ctx-section-items').hidden = false;
+      document.getElementById('ctx-item-items').hidden = true;
+      document.querySelector('#ctx-section-items [data-action="add-folder-section"]').hidden = false;
+      document.querySelector('#ctx-section-items [data-action="add-bookmark-section"]').hidden = false;
+      document.querySelector('#ctx-section-items [data-action="add-tab-section"]').textContent = 'Add current tab';
+      ctxMenu.style.left = e.clientX + 'px';
+      ctxMenu.style.top = e.clientY + 'px';
+      ctxMenu.style.display = 'block';
+      requestAnimationFrame(() => ctxMenu.classList.add('is-open'));
+      return;
+    }
 
     document.getElementById('ctx-section-items').hidden = true;
     document.getElementById('ctx-item-items').hidden = false;
     document.getElementById('ctx-open').style.display = isFolder ? 'none' : '';
-    document.getElementById('ctx-edit').style.display = isSystem ? 'none' : '';
+    document.getElementById('ctx-edit').style.display = '';
     document.getElementById('ctx-edit').textContent = isFolder ? 'Edit Folder' : 'Edit';
     document.getElementById('ctx-pin').style.display = isFolder ? 'none' : '';
     document.getElementById('context-move-folder').style.display = isFolder ? 'none' : '';
-    document.getElementById('ctx-delete').style.display = isSystem ? 'none' : '';
+    document.getElementById('ctx-delete').style.display = '';
     document.getElementById('context-folder-list').style.display = 'none';
-    document.getElementById('ctx-divider').hidden = isSystem;
+    document.getElementById('ctx-divider').hidden = false;
     if (!isFolder) {
       const bm = state.bookmarks.find(b => b.id === ctxTargetId);
       document.getElementById('ctx-pin').textContent = bm?.pinned ? 'Unpin' : 'Pin';
