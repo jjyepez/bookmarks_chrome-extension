@@ -85,10 +85,8 @@ async function refresh() {
 function makeBookmarkHTML(bm) {
   const domain = bm.url ? new URL(bm.url).hostname : '';
   const favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
-  const iconColor = bm.color ? `style="color:${bm.color}"` : '';
   return `
     <div class="bookmark-item" data-id="${bm.id}" data-type="bookmark">
-      <span class="material-symbols-outlined bookmark-item__icon" ${iconColor}>bookmark</span>
       <img class="bookmark-item__favicon" src="${favicon}" alt="" loading="lazy" onerror="this.style.display='none'" />
       <div class="bookmark-item__info">
         <div class="bookmark-item__title">${escHtml(bm.title || 'Untitled')}</div>
@@ -100,7 +98,8 @@ function makeBookmarkHTML(bm) {
 }
 
 function makeFolderHTML(folder, bookmarks) {
-  const count = bookmarks.length + folder.childrenCount;
+  const nested = folder.children ? folder.children.reduce((s, c) => s + 1 + (c.bookmarkCount || 0), 0) : 0;
+  const count = bookmarks.length + nested;
   let childrenHTML = '';
 
   if (folder.children && folder.children.length) {
@@ -126,7 +125,7 @@ function makeFolderHTML(folder, bookmarks) {
         <span class="folder-item__count">${count}</span>
         ${folder.label && !folder.system ? `<span class="folder-item__label">${escHtml(folder.label)}</span>` : ''}
       </div>
-      <div class="folder-children">
+      <div class="folder-children"${isSystem ? '' : ' style="display:none"'}>
         ${nestedHTML}
         ${childrenHTML}
         ${!nestedHTML && !childrenHTML ? '<div class="empty-state folder-empty">Empty</div>' : ''}
@@ -199,8 +198,8 @@ async function openBookmarkModal(bm = {}) {
 
   const folders = await getFolders();
   const sel = form.elements.folderId;
-  sel.innerHTML = '<option value="">None</option>' +
-    folders.map(f => `<option value="${f.id}" ${f.id === bm.folderId ? 'selected' : ''}>${escHtml(f.name)}</option>`).join('');
+  sel.innerHTML = '<option value="">None (root level)</option>' +
+    folders.filter(f => !f.system).map(f => `<option value="${f.id}" ${f.id === bm.folderId ? 'selected' : ''}>${escHtml(f.name)}</option>`).join('');
 
   overlay.classList.add('is-open');
   form.elements.title.focus();
@@ -357,7 +356,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (folderItem && !e.target.closest('[data-action]') && folderItem.dataset.system !== 'true') {
-      folderGroup.classList.toggle('open');
+      const children = folderGroup.querySelector('.folder-children');
+      if (children) {
+        const isOpen = children.style.display !== 'none';
+        children.style.display = isOpen ? 'none' : '';
+        folderGroup.classList.toggle('open');
+      }
       return;
     }
 
@@ -455,12 +459,14 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelector('#ctx-section-items [data-action="add-bookmark-section"]').hidden = !showAll;
 
       const tabLabel = ctxSection === 'pinned' ? 'Add current tab (pinned)' : 'Add current tab';
-      document.querySelector('#ctx-section-items [data-action="add-tab-section"]').textContent = tabLabel;
+      document.querySelector('#ctx-section-items [data-action="add-tab-section"]').innerHTML = '<span class="material-symbols-outlined ctx-icon">tab</span> ' + tabLabel;
 
       ctxMenu.style.left = e.clientX + 'px';
       ctxMenu.style.top = e.clientY + 'px';
       ctxMenu.style.display = 'block';
-      requestAnimationFrame(() => ctxMenu.classList.add('is-open'));
+      requestAnimationFrame(() => {
+        ctxMenu.classList.add('is-open');
+      });
       return;
     }
 
@@ -479,33 +485,45 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('ctx-item-items').hidden = true;
       document.querySelector('#ctx-section-items [data-action="add-folder-section"]').hidden = false;
       document.querySelector('#ctx-section-items [data-action="add-bookmark-section"]').hidden = false;
-      document.querySelector('#ctx-section-items [data-action="add-tab-section"]').textContent = 'Add current tab';
+      document.querySelector('#ctx-section-items [data-action="add-tab-section"]').innerHTML = '<span class="material-symbols-outlined ctx-icon">tab</span> Add current tab';
       ctxMenu.style.left = e.clientX + 'px';
       ctxMenu.style.top = e.clientY + 'px';
       ctxMenu.style.display = 'block';
-      requestAnimationFrame(() => ctxMenu.classList.add('is-open'));
+      requestAnimationFrame(() => {
+        ctxMenu.classList.add('is-open');
+      });
       return;
     }
 
-    document.getElementById('ctx-section-items').hidden = true;
-    document.getElementById('ctx-item-items').hidden = false;
     document.getElementById('ctx-open').style.display = isFolder ? 'none' : '';
-    document.getElementById('ctx-edit').style.display = '';
-    document.getElementById('ctx-edit').textContent = isFolder ? 'Edit Folder' : 'Edit';
     document.getElementById('ctx-pin').style.display = isFolder ? 'none' : '';
     document.getElementById('context-move-folder').style.display = isFolder ? 'none' : '';
-    document.getElementById('ctx-delete').style.display = '';
     document.getElementById('context-folder-list').style.display = 'none';
-    document.getElementById('ctx-divider').hidden = false;
-    if (!isFolder) {
+    if (isFolder) {
+      document.getElementById('ctx-section-items').hidden = false;
+      document.getElementById('ctx-item-items').hidden = false;
+      document.querySelector('#ctx-section-items [data-action="add-folder-section"]').hidden = true;
+      document.querySelector('#ctx-section-items [data-action="add-bookmark-section"]').hidden = false;
+      document.querySelector('#ctx-section-items [data-action="add-tab-section"]').innerHTML = '<span class="material-symbols-outlined ctx-icon">tab</span> Add current tab';
+      document.getElementById('ctx-edit').textContent = 'Edit Folder';
+      document.getElementById('ctx-divider').hidden = false;
+    } else {
+      document.getElementById('ctx-section-items').hidden = true;
+      document.getElementById('ctx-item-items').hidden = false;
+      document.getElementById('ctx-edit').textContent = 'Edit';
+      document.getElementById('ctx-divider').hidden = false;
       const bm = state.bookmarks.find(b => b.id === ctxTargetId);
       document.getElementById('ctx-pin').textContent = bm?.pinned ? 'Unpin' : 'Pin';
     }
+    document.getElementById('ctx-edit').style.display = '';
+    document.getElementById('ctx-delete').style.display = '';
 
     ctxMenu.style.left = e.clientX + 'px';
     ctxMenu.style.top = e.clientY + 'px';
     ctxMenu.style.display = 'block';
-    requestAnimationFrame(() => ctxMenu.classList.add('is-open'));
+    requestAnimationFrame(() => {
+      ctxMenu.classList.add('is-open');
+    });
   });
 
   ctxMenu.addEventListener('click', async (e) => {
@@ -545,12 +563,17 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (action === 'add-tab-section') {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab) return;
+      const folderId = targetType === 'folder' ? targetId : null;
       const pinned = targetSection === 'pinned';
-      await addBookmark({ title: tab.title, url: tab.url, pinned });
+      await addBookmark({ title: tab.title, url: tab.url, folderId, pinned });
       toast('Bookmark added' + (pinned ? ' (pinned)' : ''));
       await refresh();
     } else if (action === 'add-bookmark-section') {
-      openBookmarkModal();
+      if (targetType === 'folder') {
+        openBookmarkModal({ folderId: targetId });
+      } else {
+        openBookmarkModal();
+      }
     } else if (action === 'add-folder-section') {
       openFolderModal();
     } else if (action === 'delete') {
@@ -573,6 +596,18 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('context-move-folder').addEventListener('click', async (e) => {
+    const moveTo = e.target.closest('[data-action="move-to"]');
+    if (moveTo) {
+      const targetId = ctxTargetId;
+      const folderId = moveTo.dataset.folder;
+      closeContextMenu();
+      if (targetId) {
+        await updateBookmark(targetId, { folderId });
+        toast('Bookmark moved');
+        await refresh();
+      }
+      return;
+    }
     e.stopPropagation();
     const folderList = document.getElementById('context-folder-list');
     const isVisible = folderList.style.display === 'block';
@@ -581,8 +616,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const currentBm = state.bookmarks.find(b => b.id === ctxTargetId);
-    folderList.innerHTML = '<div class="context-menu__item" data-action="move-to" data-folder="">None</div>' +
-      state.folders.map(f =>
+    folderList.innerHTML = '<div class="context-menu__item" data-action="move-to" data-folder="">None (root level)</div>' +
+      state.folders.filter(f => !f.system).map(f =>
         `<div class="context-menu__item" data-action="move-to" data-folder="${f.id}" ${f.id === currentBm?.folderId ? 'style="font-weight:600;background:var(--surface)"' : ''}>${escHtml(f.name)}</div>`
       ).join('');
     folderList.style.display = 'block';

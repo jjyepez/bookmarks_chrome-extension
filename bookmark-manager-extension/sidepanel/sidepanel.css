@@ -64,6 +64,25 @@
   --folder-children-border: #2a2a4a;
 }
 
+[data-theme="light"] {
+  --bg: #ffffff;
+  --surface: #f8f9fa;
+  --border: #e0e0e0;
+  --text: #212529;
+  --text-secondary: #6c757d;
+  --primary: #1f93ff;
+  --primary-hover: #1976d2;
+  --danger: #e53935;
+  --shadow: 0 2px 8px rgba(0,0,0,.12);
+  --context-menu-bg: #ffffff;
+  --context-menu-hover: #f0f0f0;
+  --context-menu-danger-bg: #fff5f5;
+  --toast-bg: #323232;
+  --toast-text: #ffffff;
+  --modal-overlay: rgba(0,0,0,.4);
+  --folder-children-border: #e0e0e0;
+}
+
 body {
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 14px;
@@ -288,15 +307,12 @@ body {
   background: var(--surface);
 }
 
-.bookmark-item__icon,
 .bookmark-item__favicon {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
   border-radius: 2px;
 }
-
-.bookmark-item__icon { line-height: 1; }
 
 .bookmark-item__info {
   flex: 1;
@@ -383,6 +399,8 @@ body {
   color: var(--text-secondary);
   white-space: nowrap;
   flex-shrink: 0;
+}
+
 .folder-group {
   margin-bottom: 1px;
 }
@@ -415,6 +433,8 @@ body {
 .folder-empty {
   font-size: 11px;
   padding: 6px !important;
+}
+
 .empty-state {
   padding: 16px;
   text-align: center;

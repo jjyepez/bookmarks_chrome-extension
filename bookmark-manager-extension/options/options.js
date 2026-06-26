@@ -151,7 +151,7 @@ async function loadDisplaySettings() {
 
 document.getElementById('theme-select').addEventListener('change', async (e) => {
   await chrome.storage.local.set({ [THEME_KEY]: e.target.value });
-  setStatus('Theme saved. Reopen the side panel to see changes.');
+  setStatus('Theme applied immediately.');
 });
 
 document.getElementById('show-url-check').addEventListener('change', async (e) => {
