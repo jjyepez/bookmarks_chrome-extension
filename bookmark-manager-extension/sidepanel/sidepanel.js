@@ -109,13 +109,13 @@ function makeFolderHTML(folder, bookmarks, hideActions) {
   return `
     <div class="folder-group" data-folder-id="${folder.id}">
       <div class="folder-item" data-id="${folder.id}" data-type="folder" data-system="${folder.system ? 'true' : ''}">
-        <span class="folder-item__toggle material-symbols-outlined" style="font-size:14px">chevron_right</span>
+        <span class="material-symbols-outlined folder-item__chevron">chevron_right</span>
         <span class="material-symbols-outlined folder-item__icon" ${iconColor}>${iconName}</span>
         <span class="folder-item__name">${escHtml(folder.name)}</span>
         <span class="folder-item__count">${count}</span>
         ${folder.label && !folder.system ? `<span class="folder-item__label">${escHtml(folder.label)}</span>` : ''}
       </div>
-      <div class="folder-children" style="display:none">
+      <div class="folder-children">
         ${childrenHTML}
         ${nestedHTML || '<div class="empty-state folder-empty">Empty</div>'}
       </div>
@@ -350,13 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (folderItem && !e.target.closest('[data-action]')) {
-      const children = folderGroup.querySelector('.folder-children');
-      const toggle = folderItem.querySelector('.folder-item__toggle');
-      if (children) {
-        const isOpen = children.style.display !== 'none';
-        children.style.display = isOpen ? 'none' : 'block';
-        toggle.textContent = isOpen ? '▶' : '▼';
-      }
+      folderGroup.classList.toggle('open');
       return;
     }
 

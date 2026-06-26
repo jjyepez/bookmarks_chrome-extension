@@ -412,17 +412,29 @@ body {
   flex-shrink: 0;
 }
 
-.folder-item__toggle {
-  font-size: 10px;
-  color: var(--text-secondary);
-  flex-shrink: 0;
-  width: 12px;
-  text-align: center;
-  transition: transform .15s;
-}
+
 
 .folder-group {
   margin-bottom: 1px;
+}
+
+.folder-group .folder-children {
+  display: none;
+}
+
+.folder-group.open .folder-children {
+  display: block;
+}
+
+.folder-item__chevron {
+  font-size: 14px !important;
+  flex-shrink: 0;
+  transition: transform .15s;
+  line-height: 1;
+}
+
+.folder-group.open .folder-item__chevron {
+  transform: rotate(90deg);
 }
 
 .folder-children {
