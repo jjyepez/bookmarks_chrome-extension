@@ -447,6 +447,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const isFolder = ctxType === 'folder';
     const isSystem = item.dataset.system === 'true';
 
+    if (isSystem) return;
+
     document.getElementById('ctx-open').style.display = isFolder ? 'none' : '';
     document.getElementById('ctx-edit').style.display = isSystem ? 'none' : '';
     document.getElementById('ctx-edit').textContent = isFolder ? 'Edit Folder' : 'Edit';
