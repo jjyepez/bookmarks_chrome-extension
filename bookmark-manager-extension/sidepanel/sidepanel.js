@@ -161,36 +161,47 @@ function render() {
       )
     : state.bookmarks;
 
+  document.getElementById('section-pinned').style.display = q ? 'none' : '';
+  document.getElementById('section-recent').style.display = q ? 'none' : '';
+  document.getElementById('section-folders').style.display = q ? 'none' : '';
+  document.getElementById('section-search-results').style.display = q ? '' : 'none';
+
   const pinned = filtered.filter(b => b.pinned);
   const recent = [...filtered].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5);
   const root = state.folders.find(f => f.system === true);
   const userFolders = state.folders.filter(f => !f.system);
 
-  document.getElementById('pinned-list').innerHTML = pinned.length
-    ? pinned.map(makeBookmarkHTML).join('')
-    : '<div class="empty-state">No pinned bookmarks</div>';
-  document.getElementById('pinned-count').textContent = pinned.length > 0 ? `(${pinned.length})` : '';
-
-  document.getElementById('recent-list').innerHTML = recent.length
-    ? recent.map(makeBookmarkHTML).join('')
-    : '<div class="empty-state">No recent bookmarks</div>';
-  document.getElementById('recent-count').textContent = recent.length > 0 ? `(${recent.length})` : '';
-
-  if (root) {
-    const rootBms = filtered.filter(b => !b.folderId);
-    const rootWithChildren = {
-      ...root,
-      children: userFolders.map(f => ({ ...f, children: [] })),
-    };
-    document.getElementById('folders-list').innerHTML = makeFolderHTML(rootWithChildren, rootBms);
-    const total = rootBms.length + userFolders.length;
-    document.getElementById('folders-count').textContent = total > 0 ? `(${total})` : '';
+  if (q) {
+    document.getElementById('search-results-list').innerHTML = filtered.length
+      ? filtered.map(makeBookmarkHTML).join('')
+      : '<div class="empty-state">No bookmarks match your search</div>';
   } else {
-    document.getElementById('folders-list').innerHTML = '<div class="empty-state">No folders yet</div>';
-    document.getElementById('folders-count').textContent = '';
+    document.getElementById('pinned-list').innerHTML = pinned.length
+      ? pinned.map(makeBookmarkHTML).join('')
+      : '<div class="empty-state">No pinned bookmarks</div>';
+    document.getElementById('pinned-count').textContent = pinned.length > 0 ? `(${pinned.length})` : '';
+
+    document.getElementById('recent-list').innerHTML = recent.length
+      ? recent.map(makeBookmarkHTML).join('')
+      : '<div class="empty-state">No recent bookmarks</div>';
+    document.getElementById('recent-count').textContent = recent.length > 0 ? `(${recent.length})` : '';
+
+    if (root) {
+      const rootBms = filtered.filter(b => !b.folderId);
+      const rootWithChildren = {
+        ...root,
+        children: userFolders.map(f => ({ ...f, children: [] })),
+      };
+      document.getElementById('folders-list').innerHTML = makeFolderHTML(rootWithChildren, rootBms);
+      const total = rootBms.length + userFolders.length;
+      document.getElementById('folders-count').textContent = total > 0 ? `(${total})` : '';
+    } else {
+      document.getElementById('folders-list').innerHTML = '<div class="empty-state">No folders yet</div>';
+      document.getElementById('folders-count').textContent = '';
+    }
   }
 
-  document.getElementById('count-label').textContent = state.bookmarks.length;
+  document.getElementById('count-label').textContent = activeView === 'notes' ? (state.notes || []).filter(n => !n.deleted).length : state.bookmarks.length;
   renderNotes();
 }
 
@@ -200,21 +211,59 @@ function updateViewToggle() {
   });
   document.getElementById('bookmarks-view').style.display = activeView === 'bookmarks' ? '' : 'none';
   document.getElementById('notes-view').style.display = activeView === 'notes' ? '' : 'none';
+  document.getElementById('search-input').placeholder = activeView === 'notes' ? 'Search notes...' : 'Search bookmarks...';
+}
+
+function fmtDate(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function noteTextColor(bg) {
+  const h = bg.replace('#', '');
+  const r = parseInt(h.slice(0,2), 16), g = parseInt(h.slice(2,4), 16), b = parseInt(h.slice(4,6), 16);
+  const l = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return l > 0.55 ? '#1a1a2e' : '#ffffff';
 }
 
 function renderNotes() {
-  const notes = state.notes || [];
+  const q = searchQuery.toLowerCase().trim();
+  let notes = state.notes || [];
+  if (q) {
+    notes = notes.filter(n => (n.title || '').toLowerCase().includes(q) || (n.tag || '').toLowerCase().includes(q) || n.content.toLowerCase().includes(q));
+  } else {
+    notes = notes.filter(n => !n.deleted);
+  }
+  notes = [...notes].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.createdAt - a.createdAt);
   const board = document.getElementById('notes-board');
   if (!notes.length) {
-    board.innerHTML = '<div class="empty-state">No notes yet</div>';
+    board.innerHTML = '<div class="empty-state">' + (q ? 'No notes match your search' : 'No notes yet') + '</div>';
     return;
   }
-  board.innerHTML = notes.map(n => `
-    <div class="note-card" data-id="${n.id}" style="background:${n.color}">
-      <button class="note-card__delete" data-action="delete-note"><span class="material-symbols-outlined" style="font-size:14px">close</span></button>
-      <textarea class="note-card__text" data-action="note-text">${escHtml(n.content)}</textarea>
+  board.innerHTML = notes.map(n => {
+    const tc = noteTextColor(n.color);
+    const created = fmtDate(n.createdAt);
+    const due = n.dueDate ? new Date(n.dueDate + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    const len = n.content.length;
+    const mh = len > 300 ? '10rem' : len > 100 ? '8rem' : len > 20 ? '6rem' : '4rem';
+    const overdue = n.dueDate && new Date(n.dueDate + 'T23:59:59') < new Date();
+    return `
+    <div class="note-card${n.deleted ? ' note-card--deleted' : ''}" data-id="${n.id}" style="background:${n.color};max-height:${mh}${overdue ? ';border:4px solid #e53935' : ''}">
+      <button class="note-card__delete" data-action="delete-note" style="color:${tc}"><span class="material-symbols-outlined" style="font-size:14px">close</span></button>
+      <div class="note-card__top">
+        ${created || n.pinned ? `<div class="note-card__meta" style="color:${tc}">${n.pinned ? '<span class="note-card__pin"><span class="material-symbols-outlined" style="font-size:12px">push_pin</span></span>' : ''}${created}</div>` : ''}
+        ${n.title ? `<div class="note-card__header" style="color:${tc}">${escHtml(n.title)}</div>` : ''}
+      </div>
+      <div class="note-card__scroll">
+        <div class="note-card__text" data-action="note-text" contenteditable="true" spellcheck="false" style="color:${tc}">${escHtml(n.content)}</div>
+      </div>
+      <div class="note-card__bottom">
+        ${n.tag ? `<div class="note-card__footer" style="color:${tc}">${escHtml(n.tag)}</div>` : ''}
+        ${due ? `<div class="note-card__due" style="color:${tc}">${due}</div>` : ''}
+      </div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 async function openBookmarkModal(bm = {}) {
@@ -256,6 +305,18 @@ function openFolderModal(folder = {}) {
   form.elements.name.focus();
 }
 
+function openNoteModal(note = {}) {
+  const overlay = document.getElementById('note-modal-overlay');
+  const form = document.getElementById('note-modal-form');
+  form.elements.id.value = note.id || '';
+  form.elements.title.value = note.title || '';
+  form.elements.tag.value = note.tag || '';
+  form.elements.dueDate.value = note.dueDate || '';
+  form.elements.color.value = note.color || '#fff9c4';
+  overlay.classList.add('is-open');
+  form.elements.title.focus();
+}
+
 function onDragOver(e) { e.preventDefault(); }
 
 async function onDrop(e, folderId, pinned) {
@@ -285,18 +346,21 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('add-note-btn').addEventListener('click', async () => {
-    await addNote({ content: '', color: '#fff9c4' });
+    await addNote({ content: '', color: '#fff9c4', pinned: false });
     toast('Note added');
     await refresh();
   });
 
-  document.getElementById('notes-board').addEventListener('change', async (e) => {
-    const textarea = e.target.closest('.note-card__text');
-    if (!textarea) return;
-    const card = textarea.closest('.note-card');
+  document.getElementById('notes-board').addEventListener('blur', async (e) => {
+    const el = e.target.closest('.note-card__text');
+    if (!el) return;
+    const card = el.closest('.note-card');
     if (!card) return;
-    await updateNote(card.dataset.id, { content: textarea.value });
-  });
+    const content = el.textContent || '';
+    if (content !== (state.notes || []).find(n => n.id === card.dataset.id)?.content) {
+      await updateNote(card.dataset.id, { content });
+    }
+  }, true);
 
   document.getElementById('search-input').addEventListener('input', (e) => {
     searchQuery = e.target.value;
@@ -401,6 +465,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  document.getElementById('note-modal-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const id = form.elements.id.value;
+    const data = {
+      title: form.elements.title.value.trim(),
+      tag: form.elements.tag.value.trim(),
+      dueDate: form.elements.dueDate.value || '',
+      color: form.elements.color.value,
+    };
+    await updateNote(id, data);
+    document.getElementById('note-modal-overlay').classList.remove('is-open');
+    toast('Note updated');
+    await refresh();
+  });
+
+  document.querySelectorAll('[data-close-note-modal]').forEach(el => {
+    el.addEventListener('click', () => {
+      document.getElementById('note-modal-overlay').classList.remove('is-open');
+    });
+  });
+
+  document.getElementById('note-modal-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.remove('is-open');
+  });
+
   document.getElementById('content').addEventListener('click', async (e) => {
     const bookmarkItem = e.target.closest('.bookmark-item');
     const folderGroup = e.target.closest('.folder-group');
@@ -443,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await togglePin(id);
       await refresh();
     } else if (action === 'delete-note') {
-      await deleteNote(id);
+      await updateNote(id, { deleted: true });
       toast('Note deleted');
       await refresh();
     } else if (action === 'delete') {
@@ -490,58 +580,72 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape') {
       document.getElementById('modal-overlay').classList.remove('is-open');
       document.getElementById('folder-modal-overlay').classList.remove('is-open');
+      document.getElementById('note-modal-overlay').classList.remove('is-open');
     }
   });
 
   const ctxMenu = document.getElementById('context-menu');
   let ctxTargetId = null;
-  let ctxType = null;
   let ctxSection = null;
 
   function closeContextMenu() {
     ctxMenu.classList.remove('is-open');
     ctxMenu.style.display = 'none';
     ctxTargetId = null;
-    ctxType = null;
     ctxSection = null;
   }
 
-  document.getElementById('content').addEventListener('contextmenu', (e) => {
-    const sectionTitle = e.target.closest('.section__title--toggle');
-    if (sectionTitle) {
-      e.preventDefault();
-      ctxSection = sectionTitle.dataset.section;
-      ctxTargetId = null;
-      ctxType = 'section';
+  function showCtxMenu(e) {
+    ctxMenu.style.left = e.clientX + 'px';
+    ctxMenu.style.top = e.clientY + 'px';
+    ctxMenu.style.display = 'block';
+    requestAnimationFrame(() => ctxMenu.classList.add('is-open'));
+  }
 
-      const showAll = ctxSection === 'folders';
-      document.getElementById('ctx-section-items').hidden = false;
-      document.getElementById('ctx-item-items').hidden = true;
+  const NOTE_COLORS = ['#fff9c4', '#ffccbc', '#c8e6c9', '#bbdefb', '#e1bee7', '#ffe0b2', '#b2dfdb', '#f8bbd0', '#ffffff', '#e0e0e0'];
 
-      document.querySelector('#ctx-section-items [data-action="add-folder-section"]').hidden = !showAll;
-      document.querySelector('#ctx-section-items [data-action="add-bookmark-section"]').hidden = !showAll;
+  function buildNoteColorSubmenu(selectedColor) {
+    document.getElementById('ctx-note-colors').innerHTML = NOTE_COLORS.map(c =>
+      `<span class="color-swatch${c === selectedColor ? ' is-selected' : ''}" style="background:${c}" data-color="${c}"></span>`
+    ).join('');
+  }
 
-      const tabLabel = ctxSection === 'pinned' ? 'Add current tab (pinned)' : 'Add current tab';
-      document.querySelector('#ctx-section-items [data-action="add-tab-section"]').innerHTML = '<span class="material-symbols-outlined ctx-icon">tab</span> ' + tabLabel;
-
-      ctxMenu.style.left = e.clientX + 'px';
-      ctxMenu.style.top = e.clientY + 'px';
-      ctxMenu.style.display = 'block';
-      requestAnimationFrame(() => {
-        ctxMenu.classList.add('is-open');
-      });
-      return;
-    }
-
-    const item = e.target.closest('[data-id]');
-    if (!item) return;
+  function showNoteContext(e, noteId, color, pinned) {
     e.preventDefault();
+    ctxTargetId = noteId;
+    document.getElementById('ctx-note-items').hidden = false;
+    document.getElementById('ctx-section-items').hidden = true;
+    document.getElementById('ctx-item-items').hidden = true;
+    document.getElementById('ctx-note-pin').innerHTML = '<span class="material-symbols-outlined ctx-icon">push_pin</span> ' + (pinned ? 'Unpin' : 'Pin');
+    buildNoteColorSubmenu(color);
+    showCtxMenu(e);
+  }
 
+  function showBookmarkSectionContext(e, sectionName) {
+    e.preventDefault();
+    ctxSection = sectionName;
+    ctxTargetId = null;
+
+    const showAll = sectionName === 'folders';
+    document.getElementById('ctx-section-items').hidden = false;
+    document.getElementById('ctx-item-items').hidden = true;
+    document.getElementById('ctx-note-items').hidden = true;
+
+    document.querySelector('#ctx-section-items [data-action="add-folder-section"]').hidden = !showAll;
+    document.querySelector('#ctx-section-items [data-action="add-bookmark-section"]').hidden = !showAll;
+
+    const tabLabel = sectionName === 'pinned' ? 'Add current tab (pinned)' : 'Add current tab';
+    document.querySelector('#ctx-section-items [data-action="add-tab-section"]').innerHTML = '<span class="material-symbols-outlined ctx-icon">tab</span> ' + tabLabel;
+
+    showCtxMenu(e);
+  }
+
+  function showBookmarkItemContext(e, item) {
+    e.preventDefault();
     ctxTargetId = item.dataset.id;
-    ctxType = item.dataset.type;
-
-    const isFolder = ctxType === 'folder';
+    const isFolder = item.dataset.type === 'folder';
     const isSystem = item.dataset.system === 'true';
+    document.getElementById('ctx-note-items').hidden = true;
 
     if (isSystem) {
       document.getElementById('ctx-section-items').hidden = false;
@@ -549,75 +653,122 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelector('#ctx-section-items [data-action="add-folder-section"]').hidden = false;
       document.querySelector('#ctx-section-items [data-action="add-bookmark-section"]').hidden = false;
       document.querySelector('#ctx-section-items [data-action="add-tab-section"]').innerHTML = '<span class="material-symbols-outlined ctx-icon">tab</span> Add current tab';
-      ctxMenu.style.left = e.clientX + 'px';
-      ctxMenu.style.top = e.clientY + 'px';
-      ctxMenu.style.display = 'block';
-      requestAnimationFrame(() => {
-        ctxMenu.classList.add('is-open');
-      });
+      showCtxMenu(e);
       return;
     }
+
+    document.getElementById('ctx-section-items').hidden = false;
+    document.getElementById('ctx-item-items').hidden = false;
 
     document.getElementById('ctx-open').style.display = isFolder ? 'none' : '';
     document.getElementById('ctx-pin').style.display = isFolder ? 'none' : '';
     document.getElementById('context-move-folder').style.display = isFolder ? 'none' : '';
     document.getElementById('context-folder-list').style.display = 'none';
+
     if (isFolder) {
-      document.getElementById('ctx-section-items').hidden = false;
-      document.getElementById('ctx-item-items').hidden = false;
       document.querySelector('#ctx-section-items [data-action="add-folder-section"]').hidden = true;
       document.querySelector('#ctx-section-items [data-action="add-bookmark-section"]').hidden = false;
       document.querySelector('#ctx-section-items [data-action="add-tab-section"]').innerHTML = '<span class="material-symbols-outlined ctx-icon">tab</span> Add current tab';
-      document.getElementById('ctx-edit').textContent = 'Edit Folder';
-      document.getElementById('ctx-divider').hidden = false;
+      document.getElementById('ctx-edit').innerHTML = '<span class="material-symbols-outlined ctx-icon">edit</span> Edit Folder';
     } else {
-      document.getElementById('ctx-section-items').hidden = true;
-      document.getElementById('ctx-item-items').hidden = false;
-      document.getElementById('ctx-edit').textContent = 'Edit';
-      document.getElementById('ctx-divider').hidden = false;
+      document.querySelector('#ctx-section-items [data-action="add-folder-section"]').hidden = true;
+      document.querySelector('#ctx-section-items [data-action="add-bookmark-section"]').hidden = true;
+      document.querySelector('#ctx-section-items [data-action="add-tab-section"]').hidden = true;
+      document.getElementById('ctx-edit').innerHTML = '<span class="material-symbols-outlined ctx-icon">edit</span> Edit';
       const bm = state.bookmarks.find(b => b.id === ctxTargetId);
-      document.getElementById('ctx-pin').textContent = bm?.pinned ? 'Unpin' : 'Pin';
+      document.getElementById('ctx-pin').innerHTML = '<span class="material-symbols-outlined ctx-icon">push_pin</span> ' + (bm?.pinned ? 'Unpin' : 'Pin');
     }
+    document.getElementById('ctx-divider').hidden = false;
     document.getElementById('ctx-edit').style.display = '';
     document.getElementById('ctx-delete').style.display = '';
+    showCtxMenu(e);
+  }
 
-    ctxMenu.style.left = e.clientX + 'px';
-    ctxMenu.style.top = e.clientY + 'px';
-    ctxMenu.style.display = 'block';
-    requestAnimationFrame(() => {
-      ctxMenu.classList.add('is-open');
-    });
+  document.getElementById('content').addEventListener('contextmenu', (e) => {
+    if (activeView === 'notes') {
+      const noteCard = e.target.closest('.note-card');
+      if (!noteCard) return;
+      const note = (state.notes || []).find(n => n.id === noteCard.dataset.id);
+      if (!note) return;
+      showNoteContext(e, note.id, note.color, !!note.pinned);
+      return;
+    }
+
+    const sectionTitle = e.target.closest('.section__title--toggle');
+    if (sectionTitle) {
+      showBookmarkSectionContext(e, sectionTitle.dataset.section);
+      return;
+    }
+
+    const item = e.target.closest('[data-id]');
+    if (!item) return;
+    showBookmarkItemContext(e, item);
   });
 
   ctxMenu.addEventListener('click', async (e) => {
+    const swatch = e.target.closest('.color-swatch');
+    if (swatch) {
+      const color = swatch.dataset.color;
+      const id = ctxTargetId;
+      closeContextMenu();
+      if (id) {
+        await updateNote(id, { color });
+        toast('Note color updated');
+        await refresh();
+      }
+      return;
+    }
+
     const actionItem = e.target.closest('[data-action]');
     if (!actionItem) return;
     const action = actionItem.dataset.action;
     const targetId = ctxTargetId;
-    const targetType = ctxType;
     const targetSection = ctxSection;
-    const folderId = actionItem.dataset.folder || null;
+
+    if (action === 'edit-note') {
+      closeContextMenu();
+      const note = (state.notes || []).find(n => n.id === targetId);
+      if (note) openNoteModal(note);
+      return;
+    }
+    if (action === 'pin-note') {
+      closeContextMenu();
+      if (targetId) {
+        const note = (state.notes || []).find(n => n.id === targetId);
+        if (note) {
+          await updateNote(targetId, { pinned: !note.pinned });
+          toast(note.pinned ? 'Note unpinned' : 'Note pinned');
+          await refresh();
+        }
+      }
+      return;
+    }
+    if (action === 'delete-note') {
+      closeContextMenu();
+      if (targetId) {
+        await updateNote(targetId, { deleted: true });
+        toast('Note deleted');
+        await refresh();
+      }
+      return;
+    }
+
     closeContextMenu();
 
     if (action === 'open') {
       const bm = state.bookmarks.find(b => b.id === targetId);
-      if (bm?.url) {
-        await chrome.tabs.create({ url: bm.url });
-      }
+      if (bm?.url) await chrome.tabs.create({ url: bm.url });
     } else if (action === 'edit') {
-      if (targetType === 'folder') {
-        const folder = state.folders.find(f => f.id === targetId);
-        if (folder) openFolderModal(folder);
-      } else {
+      const folder = state.folders.find(f => f.id === targetId);
+      if (folder) openFolderModal(folder);
+      else {
         const bm = state.bookmarks.find(b => b.id === targetId);
         if (bm) openBookmarkModal(bm);
       }
     } else if (action === 'toggle-pin') {
-      if (targetId) {
-        await togglePin(targetId);
-        await refresh();
-      }
+      if (targetId) { await togglePin(targetId); await refresh(); }
     } else if (action === 'move-to') {
+      const folderId = actionItem.dataset.folder || null;
       if (targetId) {
         await updateBookmark(targetId, { folderId });
         toast('Bookmark moved');
@@ -626,29 +777,18 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (action === 'add-tab-section') {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab) return;
-      const folderId = targetType === 'folder' ? targetId : null;
+      const folderId = targetId && state.folders.some(f => f.id === targetId) ? targetId : null;
       const pinned = targetSection === 'pinned';
       await addBookmark({ title: tab.title, url: tab.url, folderId, pinned });
       toast('Bookmark added' + (pinned ? ' (pinned)' : ''));
       await refresh();
     } else if (action === 'add-bookmark-section') {
-      if (targetType === 'folder') {
-        openBookmarkModal({ folderId: targetId });
-      } else {
-        openBookmarkModal();
-      }
+      const folderId = targetId && state.folders.some(f => f.id === targetId) ? targetId : null;
+      openBookmarkModal({ folderId });
     } else if (action === 'add-folder-section') {
       openFolderModal();
     } else if (action === 'delete') {
-      if (targetType === 'folder') {
-        try {
-          await deleteFolder(targetId);
-          toast('Folder deleted');
-          await refresh();
-        } catch (err) {
-          alert(err.message);
-        }
-      } else {
+      if (targetId) {
         if (confirm('Delete this bookmark?')) {
           await deleteBookmark(targetId);
           toast('Bookmark deleted');
@@ -661,11 +801,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('context-move-folder').addEventListener('click', async (e) => {
     const moveTo = e.target.closest('[data-action="move-to"]');
     if (moveTo) {
-      const targetId = ctxTargetId;
+      const id = ctxTargetId;
       const folderId = moveTo.dataset.folder;
       closeContextMenu();
-      if (targetId) {
-        await updateBookmark(targetId, { folderId });
+      if (id) {
+        await updateBookmark(id, { folderId });
         toast('Bookmark moved');
         await refresh();
       }
@@ -673,8 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     e.stopPropagation();
     const folderList = document.getElementById('context-folder-list');
-    const isVisible = folderList.style.display === 'block';
-    if (isVisible) {
+    if (folderList.style.display === 'block') {
       folderList.style.display = 'none';
       return;
     }
@@ -687,9 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('click', (e) => {
-    if (!ctxMenu.contains(e.target)) {
-      closeContextMenu();
-    }
+    if (!ctxMenu.contains(e.target)) closeContextMenu();
   });
 
   document.addEventListener('wheel', () => closeContextMenu(), { passive: true });
